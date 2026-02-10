@@ -4,7 +4,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>滿意度調查</title>
+    <title>【微程式資訊】2026 客戶滿意度調查</title>
+
+    <!-- Open Graph / Social Media Preview -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://bocheng-oss.github.io/MP-satisfaction-questionnaire/">
+    <meta property="og:title" content="【微程式資訊】2026 客戶滿意度調查">
+    <meta property="og:description" content="親愛的貴賓您好，感謝您對微程式的支持，您的回饋是我們進步的最大動力。誠摯邀請您花費 3~5 分鐘為我們的服務提供寶貴建議。">
+    <!-- ⚠️ 請更換為您實際的 OG 圖片網址，建議大小 1200x630 -->
+    <meta property="og:image" content="https://bocheng-oss.github.io/MP-satisfaction-questionnaire/Banner/head_zh.jpg">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="【微程式資訊】2026 客戶滿意度調查">
+    <meta name="twitter:description" content="您的回饋是我們進步的最大動力。誠摯邀請您填寫滿意度調查。">
+    <meta name="twitter:image" content="https://bocheng-oss.github.io/MP-satisfaction-questionnaire/Banner/head_zh.jpg">
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts -->
@@ -716,22 +730,27 @@
 
                 var min = 0;
                 var max = 10;
-                var currentVal = state.answers[q.id] || 5;
-                state.answers[q.id] = currentVal;
+
+                // 讀取既有答案，若無則設為空字串以顯示 '?'
+                var savedVal = state.answers[q.id];
+                var hasValue = (savedVal !== undefined && savedVal !== null && savedVal !== '');
+                var displayVal = hasValue ? savedVal : '?';
+                var sliderVal = hasValue ? savedVal : 0;
 
                 var valueDisplay = document.createElement('div');
                 valueDisplay.className = "text-left text-2xl font-medium text-[#EF4444] mb-8 transition-all px-1";
-                valueDisplay.textContent = currentVal;
+                valueDisplay.textContent = displayVal;
 
                 var inputRange = document.createElement('input');
                 inputRange.type = "range";
                 inputRange.min = min;
                 inputRange.max = max;
-                inputRange.value = currentVal;
+                inputRange.value = sliderVal;
                 inputRange.className = "range-slider mb-4";
 
-                // Track style for NPS - use brand red
-                inputRange.style.background = 'linear-gradient(to right, #EF4444 ' + (currentVal * 10) + '%, #e2e8f0 ' + (currentVal * 10) + '%)';
+                // 設定初始進度條顏色：若未填寫則全灰 (0%)
+                var percent = hasValue ? (sliderVal * 10) : 0;
+                inputRange.style.background = 'linear-gradient(to right, #EF4444 ' + percent + '%, #e2e8f0 ' + percent + '%)';
 
                 var labelsRow = document.createElement('div');
                 labelsRow.className = "flex justify-between text-slate-300 font-bold px-1 text-base";
@@ -740,11 +759,13 @@
                 inputRange.oninput = function () {
                     valueDisplay.textContent = this.value;
                     state.answers[q.id] = this.value;
-                    this.style.background = 'linear-gradient(to right, #EF4444 ' + (this.value * 10) + '%, #e2e8f0 ' + (this.value * 10) + '%)';
+                    var p = (this.value * 10);
+                    this.style.background = 'linear-gradient(to right, #EF4444 ' + p + '%, #e2e8f0 ' + p + '%)';
                     validateCurrentGroup();
                 };
 
                 inputRange.onchange = inputRange.oninput;
+
 
                 sliderWrapper.appendChild(valueDisplay);
                 sliderWrapper.appendChild(inputRange);
