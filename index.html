@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>滿意度調查</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap"
+        rel="stylesheet">
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Noto Sans TC"', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            red: '#EF4444',
+                            redLight: '#FEE2E2', // red-100
+                            dark: '#334155', // slate-700
+                            bg: '#F8FAFC', // slate-50
+                        }
+                    },
+                    borderRadius: {
+                        'card': '2.5rem',
+                    },
+                    boxShadow: {
+                        'soft': '0 20px 40px -10px rgba(0, 0, 0, 0.05)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom Scrollbar for sleek look */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background-color: #CBD5E1;
+            border-radius: 20px;
+        }
+
+        .fade-enter-active {
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+
+        .fade-leave-active {
+            animation: fadeOut 0.3s ease-in forwards;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+                transform: translateY(0);
+            }
+
+            to {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+        }
+
+        .question-card {
+            transition: all 0.3s ease;
+        }
+
+        .option-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.15);
+        }
+
+        .option-btn.selected {
+            background-color: #FEF2F2;
+            /* brand-red-50 */
+            border-color: #EF4444;
+            color: #EF4444;
+            font-weight: 500;
+        }
+
+        /* Custom Slider (NPS) Styling */
+        .slider-container {
+            padding: 1rem 0.5rem;
+            position: relative;
+        }
+
+        .range-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 8px;
+            background: #e2e8f0;
+            /* slate-200 */
+            border-radius: 4px;
+            outline: none;
+            cursor: pointer;
+            touch-action: pan-y;
+            /* Allow vertical scroll, prevent horizontal pan conflicts */
+        }
+
+        .range-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            background: white;
+            border: 3px solid #94a3b8;
+            /* slate-400 */
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            margin-top: -8px;
+            /* (8/2) - (24/2) = -8px to center vertically in webkit */
+        }
+
+        .range-slider::-moz-range-thumb {
+            width: 24px;
+            height: 24px;
+            background: white;
+            border: 3px solid #94a3b8;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .range-slider::-webkit-slider-thumb:hover,
+        .range-slider:active::-webkit-slider-thumb {
+            transform: scale(1.1);
+            border-color: #EF4444;
+            /* brand-red */
+        }
+
+        /* 徹底解決 Chrome Mobile iframe 滾動鎖死問題 */
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            position: fixed;
+            background: #f8fafc;
+            /* brand-bg */
+        }
+
+        .scroll-wrapper {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem 1rem;
+        }
+    </style>
+</head>
+
+<body class="antialiased selection:bg-brand-red selection:text-white">
+
+    <div class="scroll-wrapper">
+        <!-- Main Container -->
+        <div id="app" class="w-full max-w-2xl relative">
+
+            <!-- Header / Progress (Hidden on Intro) -->
+            <div id="header-progress" class="hidden mb-8 px-4 flex items-center justify-between fade-enter-active">
+                <div id="progress-container" class="flex-1 mr-6">
+                    <h2 id="group-title" class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">
+                        LOADING...
+                    </h2>
+                    <div class="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
+                        <div id="progress-bar" class="h-full bg-brand-red transition-all duration-500 ease-out"
+                            style="width: 0%"></div>
+                    </div>
+                </div>
+                <div class="text-brand-red">
+                    <i class="ph ph-trophy text-3xl"></i>
+                </div>
+            </div>
+
+            <!-- Content Card -->
+            <div
+                class="bg-white rounded-card shadow-2xl p-8 md:p-12 min-h-[500px] flex flex-col relative overflow-hidden transition-all duration-500">
+
+                <!-- Loading State -->
+                <div id="loading-view" class="absolute inset-0 flex flex-col items-center justify-center bg-white z-50">
+                    <div class="w-12 h-12 border-4 border-slate-100 border-t-brand-red rounded-full animate-spin"></div>
+                    <p class="mt-4 text-sm font-medium text-slate-400">載入系統中...</p>
+                </div>
+
+                <!-- Language Selection View (NEW) -->
+                <div id="language-view"
+                    class="hidden flex-1 flex flex-col items-center justify-center text-center fade-enter-active">
+                    <div class="mb-8">
+                        <i class="ph ph-translate text-6xl text-brand-red mb-4"></i>
+                    </div>
+                    <h1 class="text-3xl font-bold text-slate-800 mb-4">請選擇您的語言</h1>
+                    <h2 class="text-2xl font-semibold text-slate-600 mb-12">Choose Your Language</h2>
+
+                    <div class="flex flex-col gap-4 w-full max-w-md">
+                        <button onclick="selectLanguage('zh')"
+                            class="bg-white hover:bg-brand-red hover:text-white border-2 border-slate-200 hover:border-brand-red text-slate-700 px-10 py-6 rounded-xl font-bold text-lg tracking-wide shadow-lg hover:shadow-red-200 transition-all transform hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-3 group">
+                            <span class="text-2xl">🇹🇼</span>
+                            <span>繁體中文</span>
+                        </button>
+
+                        <button onclick="selectLanguage('en')"
+                            class="bg-white hover:bg-brand-red hover:text-white border-2 border-slate-200 hover:border-brand-red text-slate-700 px-10 py-6 rounded-xl font-bold text-lg tracking-wide shadow-lg hover:shadow-red-200 transition-all transform hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-3 group">
+                            <span class="text-2xl">🇺🇸</span>
+                            <span>English</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Intro View (New) -->
+                <div id="intro-view"
+                    class="hidden flex-1 flex flex-col items-center justify-center text-center fade-enter-active">
+                    <div id="banner-container"
+                        class="mb-8 w-[calc(100%+4rem)] -mt-8 -mx-8 md:w-[calc(100%+6rem)] md:-mt-12 md:-mx-12 overflow-hidden rounded-t-card relative min-h-[160px] bg-slate-50 flex items-center justify-center">
+                        <div id="banner-loader"
+                            class="absolute inset-0 flex items-center justify-center bg-slate-50 z-10">
+                            <div class="w-8 h-8 border-2 border-slate-200 border-t-brand-red rounded-full animate-spin">
+                            </div>
+                        </div>
+                        <img id="banner-img" src="" alt="Banner"
+                            class="w-full h-full object-cover opacity-0 transition-opacity duration-500">
+                    </div>
+                    <h1 id="intro-title" class="text-2xl font-bold text-slate-800 mb-6 mt-6">【微程式資訊】2026 客戶滿意度調查</h1>
+                    <div id="intro-content"
+                        class="text-slate-600 mb-10 max-w-lg mx-auto leading-relaxed text-left space-y-4 text-sm md:text-base">
+                        <!-- Content will be dynamically inserted -->
+                    </div>
+                    <button id="start-btn" onclick="startSurvey()"
+                        class="bg-brand-red hover:bg-red-600 text-white px-10 py-4 rounded-xl font-bold tracking-wide shadow-lg shadow-red-200 hover:shadow-red-300 transition-all transform hover:-translate-y-1 active:scale-95 flex items-center gap-2 group">
+                        <span>開始填寫</span>
+                        <i class="ph ph-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                    </button>
+                </div>
+
+                <!-- Question View -->
+                <div id="question-view" class="hidden flex-1 flex flex-col">
+                    <div id="questions-container" class="flex-1 space-y-10 pb-8 fade-enter-active">
+                        <!-- Dynamic Questions Injection -->
+                    </div>
+
+                    <!-- Navigation -->
+                    <div class="pt-6 border-t border-slate-100 flex justify-between items-center mt-auto">
+                        <button id="prev-btn"
+                            class="hidden text-slate-400 hover:text-slate-600 transition-colors font-medium text-sm flex items-center gap-1 px-3 py-2">
+                            <i class="ph ph-arrow-left"></i> <span>上一頁</span>
+                        </button>
+
+                        <button id="next-btn"
+                            class="ml-auto bg-brand-red hover:bg-red-600 text-white px-8 py-3 rounded-xl font-bold tracking-wide shadow-lg shadow-red-200 hover:shadow-red-300 transition-all transform hover:-translate-y-1 active:scale-95 flex items-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed">
+                            <span>下一頁</span>
+                            <i class="ph ph-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- End View -->
+                <div id="end-view" class="hidden flex-1 flex flex-col justify-start text-center fade-enter-active">
+                    <!-- Final Banner -->
+                    <div
+                        class="w-[calc(100%+4rem)] -mt-8 -mx-8 md:w-[calc(100%+6rem)] md:-mt-12 md:-mx-12 overflow-hidden rounded-t-card relative mb-12">
+                        <img src="https://drive.google.com/thumbnail?id=1UG31Jyc8eLHV67tRzmfRUJ3lVifHT4ak&sz=w1200"
+                            alt="Thank You Banner" class="w-full h-auto object-cover">
+                    </div>
+                    <div class="px-4 pb-8">
+                        <h2 id="end-title" class="text-3xl font-bold text-slate-800 mb-4">您的回饋內容我們收到了！</h2>
+                        <p id="end-text" class="text-slate-500 text-lg leading-relaxed">
+                            再次感謝您對 <span class="text-brand-red font-bold">微程式資訊</span> 的信任與支持。
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Terminate View (NEW) -->
+                <div id="terminate-view"
+                    class="hidden flex-1 flex flex-col justify-start text-center fade-enter-active">
+                    <div
+                        class="w-[calc(100%+4rem)] -mt-8 -mx-8 md:w-[calc(100%+6rem)] md:-mt-12 md:-mx-12 overflow-hidden rounded-t-card relative mb-12">
+                        <img src="https://drive.google.com/thumbnail?id=1wU9aACm2HVW8f3XzhHsGIE02MeL3SaZn&sz=w1200"
+                            alt="Banner" class="w-full h-auto object-cover">
+                    </div>
+                    <div class="px-4">
+                        <p id="terminate-text" class="text-slate-600 text-lg leading-relaxed mb-8">
+                            由於您未同意本公司使用問卷中的填答資料進行研究分析，故提前結束此次問卷調查，再次感謝您對 <span
+                                class="text-brand-red font-bold">微程式資訊</span>
+                            的支持。
+                        </p>
+                        <div class="flex flex-col gap-4 max-w-xs mx-auto">
+                            <button id="terminate-submit-btn" onclick="submitFromTerminate()"
+                                class="bg-brand-red hover:bg-red-600 text-white px-8 py-3 rounded-xl font-bold tracking-wide shadow-lg shadow-red-200 hover:shadow-red-300 transition-all transform hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-2 group">
+                                <span>確認提交</span>
+                                <i class="ph ph-check-circle text-xl"></i>
+                            </button>
+                            <button id="terminate-back-btn" onclick="goBackFromTerminate()"
+                                class="text-slate-400 hover:text-slate-600 transition-colors font-medium flex items-center justify-center gap-1 py-2">
+                                <i class="ph ph-arrow-left"></i> <span>回到上一頁</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div> <!-- Closes Content Card -->
+        </div> <!-- Closes #app -->
+    </div> <!-- Closes .scroll-wrapper -->
+
+    <script>
+        /* =========================================
+           MOCK DATA FOR LOCAL TESTING
+           (Set IS_LOCAL = false when deploying to GAS)
+           ========================================= */
+        var IS_LOCAL = false;
+        // ⚠️ 重要：部署到 GitHub Pages 後，請將此處替換為您的 GAS 部署網址 (exec URL)
+        var GAS_URL = 'https://script.google.com/macros/s/AKfycbx19gN6Z8tPinf3xwbZINbd62rjJ-30Hx87xBHa4d5O5AfNcnaCPQ3kvALWpfP-FQYM/exec';
+        var API_TOKEN = 'Microprogram_Secure_2026_Key'; // 必須與 Code.gs 一致
+
+        var MOCK_DATA = [
+            {
+                title: "基本資料",
+                questions: [
+                    { id: "q_name", text: "請問您的姓名？ *", type: "text", required: true },
+                    { id: "q_gender", text: "性別", type: "radio", options: ["男", "女", "其他"], required: true }
+                ]
+            }
+        ];
+
+        /* =========================================
+           APP LOGIC
+           ========================================= */
+        var state = {
+            groups: [],
+            currentGroupIndex: 0,
+            answers: {},
+            historyStack: [],
+            loading: true,
+            language: 'zh'  // 'zh' or 'en'
+        };
+
+        // --- Initialization ---
+        window.onload = function () {
+            initUI();
+            if (IS_LOCAL) {
+                console.warn("Running in LOCAL/MOCK mode.");
+                setTimeout(function () { onDataLoaded(JSON.stringify(MOCK_DATA)); }, 800);
+            } else {
+                fetch(GAS_URL + "?action=getQuestions&token=" + API_TOKEN)
+                    .then(response => response.json())
+                    .then(data => onDataLoaded(JSON.stringify(data)))
+                    .catch(err => onError("無法連線至後端: " + err));
+            }
+        };
+
+        function initUI() {
+            document.getElementById('next-btn').onclick = goNext;
+            document.getElementById('prev-btn').onclick = goPrev;
+        }
+
+        function onDataLoaded(jsonString) {
+            console.log("Data received from GAS, length: " + (jsonString ? jsonString.length : 0));
+            document.getElementById('loading-view').classList.add('hidden');
+
+            if (!jsonString) {
+                onError("No data received from spreadsheet.");
+                return;
+            }
+
+            try {
+                state.groups = JSON.parse(jsonString);
+                state.loading = false;
+                console.log("Parsed groups: " + state.groups.length);
+                // Show language selection first
+                document.getElementById('language-view').classList.remove('hidden');
+            } catch (e) {
+                console.error("Parse Error:", e);
+                onError("Data parsing error: " + e.message);
+            }
+        }
+
+        function loadBanner() {
+            var BANNER_ID = "1wU9aACm2HVW8f3XzhHsGIE02MeL3SaZn";
+            var img = document.getElementById('banner-img');
+            var loader = document.getElementById('banner-loader');
+
+            if (IS_LOCAL) {
+                if (loader) loader.classList.add('hidden');
+                if (img) {
+                    img.src = "https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&q=80&w=1000";
+                    img.classList.remove('opacity-0');
+                }
+                return;
+            }
+
+            var directUrl = "https://drive.google.com/thumbnail?id=" + BANNER_ID + "&sz=w1200";
+
+            if (img) {
+                img.onload = function () {
+                    if (loader) loader.classList.add('hidden');
+                    img.classList.remove('opacity-0');
+                };
+                img.onerror = function () {
+                    console.warn("Direct banner load failed, falling back to GAS...");
+                    fallbackToGas();
+                };
+                img.src = directUrl;
+            }
+
+            function fallbackToGas() {
+                fetch(GAS_URL + "?action=getBanner&token=" + API_TOKEN)
+                    .then(response => response.json())
+                    .then(result => {
+                        var base64 = result.data;
+                        if (loader) loader.classList.add('hidden');
+                        if (base64 && base64.indexOf("data:image") === 0 && img) {
+                            img.src = base64;
+                            img.classList.remove('opacity-0');
+                        }
+                    })
+                    .catch(() => {
+                        if (loader) loader.classList.add('hidden');
+                    });
+            }
+        }
+
+        // --- TEXT TRANSLATIONS ---
+        var TRANSLATIONS = {
+            zh: {
+                introTitle: "【微程式資訊】2026 客戶滿意度調查",
+                introContent: `
+                    <p>親愛的貴賓您好，<br>感謝您參與我們的滿意度調查，我們誠摯地希望您一切安好。</p>
+                    <p>微程式致力於提供優質服務和高品質產品，您的回饋對我們至關重要，這份問卷將幫助我們了解您的近期體驗，並進一步改進我們的服務。</p>
+                    <div class="bg-slate-50 p-5 rounded-2xl border border-slate-100">
+                        <p class="font-bold text-slate-700 mb-2">本次調查共分為兩大部份：</p>
+                        <ol class="list-decimal list-inside space-y-1 text-slate-500">
+                            <li>服務互動經驗</li>
+                            <li>服務整體滿意度</li>
+                        </ol>
+                    </div>
+                    <p>問卷填寫只需約 5 分鐘，感謝您抽出寶貴的時間向我們分享意見！</p>
+                    <p class="text-right pt-4 text-xs font-medium text-slate-400">
+                        客戶服務團隊<br>微程式資訊
+                    </p>`,
+                startBtn: "開始填寫",
+                nextBtn: "下一頁",
+                prevBtn: "上一頁",
+                submitBtn: "送出問卷",
+                submitting: "處理中...",
+                terminateText: '由於您未同意本公司使用問卷中的填答資料進行研究分析，故提前結束此次問卷調查，再次感謝您對 <span class="text-brand-red font-bold">微程式資訊</span> 的支持。',
+                terminateBackBtn: "回到上一頁",
+                terminateSubmitBtn: "確認提交",
+                resetBtn: "返回首頁",
+                otherPlaceholder: "請填寫...",
+                loadingSystem: "載入系統中...",
+                endTitle: "您的回饋內容我們收到了！",
+                endText: '再次感謝您對 <span class="text-brand-red font-bold">微程式資訊</span> 的信任與支持。'
+            },
+            en: {
+                introTitle: "Microprogram 2026 Customer Satisfaction Survey",
+                introContent: `
+                    <p>Hello,<br>Thank you for joining our satisfaction survey. We sincerely hope you are doing well.</p>
+                    <p>Microprogram is dedicated to providing high-quality services and products, and your feedback is invaluable to us. This survey will help us understand your recent experiences and further improve our services.</p>
+                    <div class="bg-slate-50 p-5 rounded-2xl border border-slate-100">
+                        <p class="font-bold text-slate-700 mb-2">This survey consists of two main sections:</p>
+                        <ol class="list-decimal list-inside space-y-1 text-slate-500">
+                            <li>Service interaction experience</li>
+                            <li>Overall service satisfaction</li>
+                        </ol>
+                    </div>
+                    <p>It will only take about 5 minutes to complete, and we appreciate you taking the time to share your thoughts.</p>
+                    <p class="text-right pt-4 text-xs font-medium text-slate-400">
+                        Customer Service Team<br>Microprogram
+                    </p>`,
+                startBtn: "Start Survey",
+                nextBtn: "Next",
+                prevBtn: "Back",
+                submitBtn: "Submit",
+                submitting: "Processing...",
+                terminateText: 'Since you have not agreed to our company using the survey responses for research and analysis, we will end this questionnaire survey early. Once again, thank you for your support for <span class="text-brand-red font-bold">Microprogram</span>.',
+                terminateBackBtn: "Back",
+                terminateSubmitBtn: "Submit",
+                resetBtn: "Back to Home",
+                otherPlaceholder: "Please specify...",
+                loadingSystem: "Loading...",
+                endTitle: "We have received your feedback!",
+                endText: 'Once again, thank you for your support and trust in <span class="text-brand-red font-bold">Microprogram</span>.'
+            }
+        };
+
+        function selectLanguage(lang) {
+            state.language = lang;
+            document.getElementById('language-view').classList.add('hidden');
+
+            // Update UI with selected language
+            var t = TRANSLATIONS[lang];
+            document.getElementById('intro-title').textContent = t.introTitle;
+            document.getElementById('intro-content').innerHTML = t.introContent;
+            document.querySelector('#start-btn span').textContent = t.startBtn;
+            document.querySelector('#prev-btn span').textContent = t.prevBtn;
+            document.getElementById('terminate-text').innerHTML = t.terminateText;
+            document.querySelector('#terminate-back-btn span').textContent = t.terminateBackBtn;
+            document.querySelector('#terminate-submit-btn span').textContent = t.terminateSubmitBtn;
+            document.getElementById('end-title').textContent = t.endTitle;
+            document.getElementById('end-text').innerHTML = t.endText;
+
+            document.getElementById('intro-view').classList.remove('hidden');
+            loadBanner();
+        }
+
+        function startSurvey() {
+            document.getElementById('intro-view').classList.add('hidden');
+            document.getElementById('question-view').classList.remove('hidden');
+            document.getElementById('header-progress').classList.remove('hidden');
+            renderGroup(0);
+        }
+
+        function onError(msg) {
+            alert("Error: " + msg);
+            var p = document.querySelector('#loading-view p');
+            if (p) {
+                p.textContent = state.language === 'en' ? "An error occurred, please refresh" : "發生錯誤，請重新整理";
+                p.classList.add('text-red-500');
+            }
+        }
+
+        function renderGroup(index) {
+            var container = document.getElementById('questions-container');
+            var groupTitleEl = document.getElementById('group-title');
+            var progressBar = document.getElementById('progress-bar');
+
+            container.innerHTML = '';
+            container.classList.remove('fade-enter-active');
+            void container.offsetWidth;
+            container.classList.add('fade-enter-active');
+
+            var isEn = state.language === 'en';
+            var group = state.groups[index];
+            state.currentGroupIndex = index;
+
+            groupTitleEl.textContent = (isEn ? group.titleEn : group.title) || ("STEP " + (index + 1));
+
+            var totalGroups = state.groups.length;
+            var progress = (index / totalGroups) * 100;
+            progressBar.style.width = (progress > 10 ? progress : 10) + "%";
+
+            for (var i = 0; i < group.questions.length; i++) {
+                container.appendChild(createQuestionElement(group.questions[i]));
+            }
+
+            document.getElementById('prev-btn').classList.toggle('hidden', state.historyStack.length === 0);
+
+            var isLast = isLastGroup(index);
+            var nextBtnSpan = document.querySelector('#next-btn span');
+            var t = TRANSLATIONS[state.language];
+            if (nextBtnSpan) {
+                nextBtnSpan.textContent = isLast ? t.submitBtn : t.nextBtn;
+            }
+
+            validateCurrentGroup();
+        }
+
+        function createQuestionElement(q) {
+            var wrapper = document.createElement('div');
+            wrapper.className = "question-card space-y-3";
+
+            var isEn = state.language === 'en';
+            var qText = isEn ? q.textEn : q.text;
+            var qDesc = isEn ? q.descriptionEn : q.description;
+
+            var label = document.createElement('label');
+            label.className = "block text-lg font-bold text-slate-700";
+            label.innerHTML = qText.replace(/\n/g, '<br>') + " " + (q.required ? '<span class="text-red-500">*</span>' : '');
+            wrapper.appendChild(label);
+
+            if (qDesc) {
+                var desc = document.createElement('p');
+                desc.className = "text-sm text-slate-400 mt-1 leading-relaxed";
+                desc.innerHTML = qDesc.replace(/\n/g, '<br>');
+                wrapper.appendChild(desc);
+            }
+
+            var inputEl;
+
+            if (q.type === 'radio' || q.type === '單選') {
+                var optionsContainer = document.createElement('div');
+                optionsContainer.className = "grid grid-cols-1 gap-3 mt-2";
+
+                var t = TRANSLATIONS[state.language];
+
+                for (var i = 0; i < q.options.length; i++) {
+                    (function (opt, index) {
+                        var isEn = state.language === 'en';
+                        var optLabel = isEn ? (q.optionsEn[index] || opt) : opt;
+
+                        var isOther = opt === '其他' || opt.indexOf('其他：') === 0;
+                        var btn = document.createElement('div');
+                        btn.className = "option-btn cursor-pointer border-2 border-slate-100 rounded-xl p-4 text-slate-600 transition-all flex items-center gap-3 bg-white";
+
+                        var currentVal = state.answers[q.id] || '';
+                        var isSel = false;
+
+                        // Check if current answer matches this option
+                        if (isOther) {
+                            var isKnownOpt = false;
+                            for (var k = 0; k < q.options.length; k++) {
+                                if (q.options[k] !== opt && q.options[k] === currentVal) {
+                                    isKnownOpt = true;
+                                    break;
+                                }
+                            }
+                            isSel = currentVal !== '' && !isKnownOpt;
+                        } else {
+                            isSel = currentVal === opt;
+                        }
+
+                        if (isSel) btn.classList.add('selected');
+
+                        btn.onclick = function (e) {
+                            if (e.target.tagName === 'INPUT') return;
+
+                            var children = optionsContainer.children;
+                            for (var j = 0; j < children.length; j++) {
+                                var child = children[j];
+                                child.classList.remove('selected');
+                                var dot = child.querySelector('.dot-inner');
+                                if (dot) {
+                                    dot.classList.add('opacity-0');
+                                    dot.classList.remove('opacity-100');
+                                }
+                            }
+
+                            this.classList.add('selected');
+                            var myDot = this.querySelector('.dot-inner');
+                            if (myDot) {
+                                myDot.classList.remove('opacity-0');
+                                myDot.classList.add('opacity-100');
+                            }
+
+                            if (isOther) {
+                                var otherInput = this.querySelector('.other-input');
+                                if (otherInput) {
+                                    otherInput.focus();
+                                    state.answers[q.id] = otherInput.value;
+                                }
+                            } else {
+                                state.answers[q.id] = opt; // Store the original ZH value
+                            }
+                            validateCurrentGroup();
+                        };
+
+                        var circleHtml = '<div class="w-5 h-5 rounded-full border-2 border-current flex items-center justify-center shrink-0">' +
+                            '<div class="dot-inner w-2.5 h-2.5 rounded-full bg-brand-red transition-opacity ' + (isSel ? 'opacity-100' : 'opacity-0') + '"></div>' +
+                            '</div>';
+
+                        if (isOther) {
+                            var otherDisplay = optLabel;
+                            if (otherDisplay.indexOf('：') === -1 && otherDisplay.indexOf(':') === -1) {
+                                otherDisplay += (isEn ? ': ' : '：');
+                            }
+                            var otherVal = isSel ? currentVal : '';
+                            btn.innerHTML = circleHtml + ' <span class="shrink-0">' + otherDisplay + '</span>' +
+                                '<input type="text" class="other-input flex-1 min-w-0 border-b border-slate-300 focus:border-brand-red outline-none px-1 text-slate-600 bg-transparent" placeholder="' + t.otherPlaceholder + '" value="' + otherVal + '">';
+
+                            var input = btn.querySelector('.other-input');
+                            input.oninput = function () {
+                                if (btn.classList.contains('selected')) {
+                                    state.answers[q.id] = this.value;
+                                    validateCurrentGroup();
+                                }
+                            };
+                            // Stop propagation for click/touch in input to prevent de-selecting option
+                            input.onclick = function (e) { e.stopPropagation(); };
+                            input.ontouchstart = function (e) { e.stopPropagation(); };
+                        } else {
+                            btn.innerHTML = circleHtml + ' <span>' + optLabel + '</span>';
+                        }
+                        optionsContainer.appendChild(btn);
+                    })(q.options[i], i);
+                }
+                inputEl = optionsContainer;
+            } else if (q.type === 'slider' || q.type === '量表' || q.type === '評分') {
+                // Adjust label for Slider (NPS) - add red accent bar (Corporate Brand)
+                label.className = "block text-2xl font-bold text-slate-700 border-l-8 border-[#EF4444] pl-4 py-1 mb-6 mt-4";
+
+                var sliderWrapper = document.createElement('div');
+                sliderWrapper.className = "slider-container w-full py-4";
+
+                var min = 0;
+                var max = 10;
+                var currentVal = state.answers[q.id] || 5;
+                state.answers[q.id] = currentVal;
+
+                var valueDisplay = document.createElement('div');
+                valueDisplay.className = "text-left text-2xl font-medium text-[#EF4444] mb-8 transition-all px-1";
+                valueDisplay.textContent = currentVal;
+
+                var inputRange = document.createElement('input');
+                inputRange.type = "range";
+                inputRange.min = min;
+                inputRange.max = max;
+                inputRange.value = currentVal;
+                inputRange.className = "range-slider mb-4";
+
+                // Track style for NPS - use brand red
+                inputRange.style.background = 'linear-gradient(to right, #EF4444 ' + (currentVal * 10) + '%, #e2e8f0 ' + (currentVal * 10) + '%)';
+
+                var labelsRow = document.createElement('div');
+                labelsRow.className = "flex justify-between text-slate-300 font-bold px-1 text-base";
+                labelsRow.innerHTML = '<span>' + min + '</span><span>' + max + '</span>';
+
+                inputRange.oninput = function () {
+                    valueDisplay.textContent = this.value;
+                    state.answers[q.id] = this.value;
+                    this.style.background = 'linear-gradient(to right, #EF4444 ' + (this.value * 10) + '%, #e2e8f0 ' + (this.value * 10) + '%)';
+                    validateCurrentGroup();
+                };
+
+                inputRange.onchange = inputRange.oninput;
+
+                sliderWrapper.appendChild(valueDisplay);
+                sliderWrapper.appendChild(inputRange);
+                sliderWrapper.appendChild(labelsRow);
+                inputEl = sliderWrapper;
+            } else if (q.type === 'textarea' || q.type === '段落') {
+                inputEl = document.createElement('textarea');
+                inputEl.className = "w-full p-4 border-2 border-slate-100 rounded-xl focus:border-brand-red focus:ring-0 outline-none transition-colors min-h-[120px] resize-none text-slate-600";
+                inputEl.placeholder = state.language === 'en' ? "Please type here..." : "請在此輸入...";
+                inputEl.value = state.answers[q.id] || '';
+                inputEl.oninput = function (e) {
+                    state.answers[q.id] = e.target.value;
+                    validateCurrentGroup();
+                };
+            } else {
+                inputEl = document.createElement('input');
+                inputEl.type = "text";
+                inputEl.className = "w-full p-4 border-2 border-slate-100 rounded-xl focus:border-brand-red focus:ring-0 outline-none transition-colors text-slate-600";
+                inputEl.placeholder = state.language === 'en' ? "Please enter..." : "請輸入...";
+                inputEl.value = state.answers[q.id] || '';
+                inputEl.oninput = function (e) {
+                    state.answers[q.id] = e.target.value;
+                    validateCurrentGroup();
+                };
+            }
+
+            wrapper.appendChild(inputEl);
+            return wrapper;
+        }
+
+        function validateCurrentGroup() {
+            var currentGroup = state.groups[state.currentGroupIndex];
+            var questions = currentGroup.questions;
+            var isValid = true;
+            for (var i = 0; i < questions.length; i++) {
+                var q = questions[i];
+                if (q.required) {
+                    var val = state.answers[q.id];
+                    if (!val || val.toString().trim() === '') {
+                        isValid = false;
+                        break;
+                    }
+                }
+            }
+
+            var nextBtn = document.getElementById('next-btn');
+            nextBtn.disabled = !isValid;
+            if (isValid) {
+                nextBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            } else {
+                nextBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            }
+            return isValid;
+        }
+
+        function goNext() {
+            if (!validateCurrentGroup()) return;
+
+            var currentGroup = state.groups[state.currentGroupIndex];
+            var jumpTarget = null;
+
+            for (var i = 0; i < currentGroup.questions.length; i++) {
+                var q = currentGroup.questions[i];
+                if (q.logic) {
+                    var ans = state.answers[q.id];
+                    if (ans && q.logic[ans]) {
+                        jumpTarget = q.logic[ans];
+                        break;
+                    } else if (q.logic["Default"]) {
+                        if (!jumpTarget) jumpTarget = q.logic["Default"];
+                    }
+                }
+            }
+
+            if (jumpTarget === "Submit" || jumpTarget === "End" || jumpTarget === "完成") {
+                submitForm();
+                return;
+            }
+
+            if (jumpTarget === "Termination" || jumpTarget === "中止" || jumpTarget === "結束") {
+                showTerminateScreen();
+                return;
+            }
+
+            var nextIndex = -1;
+            if (jumpTarget) {
+                for (var j = 0; j < state.groups.length; j++) {
+                    if (state.groups[j].id === jumpTarget) {
+                        nextIndex = j;
+                        break;
+                    }
+                }
+            }
+
+            if (nextIndex === -1) {
+                nextIndex = state.currentGroupIndex + 1;
+            }
+
+            if (nextIndex < state.groups.length) {
+                state.historyStack.push(state.currentGroupIndex);
+                renderGroup(nextIndex);
+                document.querySelector('.scroll-wrapper').scrollTo({ top: 0, behavior: 'smooth' });
+            } else {
+                submitForm();
+            }
+        }
+
+        function goPrev() {
+            if (state.historyStack.length > 0) {
+                var prevIndex = state.historyStack.pop();
+                renderGroup(prevIndex);
+                document.querySelector('.scroll-wrapper').scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        function submitForm(sourceBtnId) {
+            var t = TRANSLATIONS[state.language];
+            var btnId = sourceBtnId || 'next-btn';
+            var btn = document.getElementById(btnId);
+            var originalContent = btn.innerHTML;
+
+            // Set loading state
+            btn.innerHTML = '<i class="ph ph-spinner animate-spin text-xl"></i> ' + t.submitting;
+            btn.disabled = true;
+
+            // Prepare payload
+            var payload = JSON.parse(JSON.stringify(state.answers));
+            payload["操作語言"] = state.language === 'en' ? 'English' : '繁體中文';
+            payload["token"] = API_TOKEN; // 帶入暗號
+
+            if (!IS_LOCAL) {
+                // 使用 fetch POST 至 GAS
+                fetch(GAS_URL, {
+                    method: 'POST',
+                    mode: 'no-cors', // 重要：避免 CORS Preflight 並允許轉向
+                    body: JSON.stringify(payload)
+                })
+                    .then(() => {
+                        // 注意：no-cors 會導致 response 為 opaque 無法讀取內容
+                        // 但通常只要成功轉向完成寫入，我們就假設成功並顯示感謝頁
+                        showEndScreen();
+                    })
+                    .catch(err => {
+                        var errMsg = state.language === 'en' ? "Submission failed: " : "提交失敗: ";
+                        alert(errMsg + err);
+                        btn.innerHTML = originalContent;
+                        btn.disabled = false;
+                    });
+            } else {
+                setTimeout(function () {
+                    console.log("Submitted Payload:", payload);
+                    showEndScreen();
+                }, 1000);
+            }
+        }
+
+        function submitFromTerminate() {
+            submitForm('terminate-submit-btn');
+        }
+
+        function goBackFromTerminate() {
+            document.getElementById('terminate-view').classList.add('hidden');
+            document.getElementById('question-view').classList.remove('hidden');
+            document.getElementById('header-progress').classList.remove('hidden');
+            // Re-render current group to ensure UI is fresh
+            renderGroup(state.currentGroupIndex);
+        }
+
+        function showEndScreen() {
+            document.getElementById('question-view').classList.add('hidden');
+            document.getElementById('terminate-view').classList.add('hidden');
+            document.getElementById('end-view').classList.remove('hidden');
+            document.getElementById('header-progress').classList.add('hidden');
+        }
+
+        function showTerminateScreen() {
+            document.getElementById('question-view').classList.add('hidden');
+            document.getElementById('terminate-view').classList.remove('hidden');
+            document.getElementById('header-progress').classList.add('hidden');
+        }
+
+        function resetSurvey() {
+            // Hide all potential views
+            var views = ['question-view', 'end-view', 'terminate-view', 'header-progress'];
+            for (var i = 0; i < views.length; i++) {
+                var el = document.getElementById(views[i]);
+                if (el) el.classList.add('hidden');
+            }
+
+            // Reset state
+            state.currentGroupIndex = 0;
+            state.answers = {};
+            state.historyStack = [];
+
+            // Show intro
+            document.getElementById('intro-view').classList.remove('hidden');
+
+            // Reset progress bar visually
+            var progressBar = document.getElementById('progress-bar');
+            if (progressBar) progressBar.style.width = '0%';
+        }
+
+        function isLastGroup(index) {
+            return index === state.groups.length - 1;
+        }
+
+    </script>
+</body>
+
+</html>
