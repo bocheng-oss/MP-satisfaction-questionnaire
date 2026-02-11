@@ -494,17 +494,32 @@
         }
 
         function isSurveyOpen() {
-            if (!state.settings.start && !state.settings.end) return true; // Default to open if no settings
+            if (!state.settings || (!state.settings.start && !state.settings.end)) return true;
 
-            var now = new Date();
+            // 取得今天的 YYYY/MM/DD 字串
+            var d = new Date();
+            var today = d.getFullYear() + '/' +
+                ("0" + (d.getMonth() + 1)).slice(-2) + '/' +
+                ("0" + d.getDate()).slice(-2);
+
+            console.log("--- 調查時間檢查 ---");
+            console.log("今天日期: ", today);
+            console.log("開放開始: ", state.settings.start);
+            console.log("開放結束: ", state.settings.end);
+
             if (state.settings.start) {
-                var start = new Date(state.settings.start);
-                if (now < start) return false;
+                if (today < state.settings.start) {
+                    console.log("結果: 尚未開始");
+                    return false;
+                }
             }
             if (state.settings.end) {
-                var end = new Date(state.settings.end);
-                if (now > end) return false;
+                if (today > state.settings.end) {
+                    console.log("結果: 已經結束");
+                    return false;
+                }
             }
+            console.log("結果: 開放中");
             return true;
         }
 
