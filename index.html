@@ -247,6 +247,20 @@
                     <p class="mt-4 text-sm font-medium text-slate-400">載入系統中...</p>
                 </div>
 
+                <!-- Out of Survey Time View -->
+                <div id="closed-view"
+                    class="hidden flex-1 flex flex-col items-center justify-center text-center fade-enter-active p-4">
+                    <div class="mb-8">
+                        <i class="ph ph-calendar-x text-6xl text-slate-300"></i>
+                    </div>
+                    <img id="closed-logo" src="Logo/180802_微程式資訊Logo_RGB-01.jpg" alt="Logo"
+                        class="h-12 mb-8 object-contain opacity-50">
+                    <h1 id="closed-title" class="text-2xl font-bold text-slate-800 mb-4">目前非調查時間</h1>
+                    <p id="closed-desc" class="text-slate-500 text-base leading-relaxed max-w-md mx-auto">
+                        感謝您的關注。本問卷調查尚未開始或已經結束，如有任何問題請連繫客服團隊。
+                    </p>
+                </div>
+
                 <!-- Language Selection View (NEW) -->
                 <div id="language-view"
                     class="hidden flex-1 flex flex-col items-center justify-center text-center fade-enter-active">
@@ -393,7 +407,8 @@
             answers: {},
             historyStack: [],
             loading: true,
-            language: 'zh'  // 'zh' or 'en'
+            language: 'zh',  // 'zh' or 'en'
+            settings: {}
         };
 
         // --- Initialization ---
@@ -437,8 +452,17 @@
             }
 
             try {
-                state.groups = JSON.parse(jsonString);
+                const response = JSON.parse(jsonString);
+                state.groups = response.groups || [];
+                state.settings = response.settings || {};
                 state.loading = false;
+
+                // Check if survey is within allowed time
+                if (!isSurveyOpen()) {
+                    showClosedPage();
+                    return;
+                }
+
                 console.log("Parsed groups: " + state.groups.length);
                 // Show language selection first
                 document.getElementById('language-view').classList.remove('hidden');
@@ -447,6 +471,33 @@
                 console.error("Parse Error:", e);
                 onError("Data parsing error: " + e.message);
             }
+        }
+
+        function isSurveyOpen() {
+            if (!state.settings.start && !state.settings.end) return true; // Default to open if no settings
+
+            var now = new Date();
+            if (state.settings.start) {
+                var start = new Date(state.settings.start);
+                if (now < start) return false;
+            }
+            if (state.settings.end) {
+                var end = new Date(state.settings.end);
+                if (now > end) return false;
+            }
+            return true;
+        }
+
+        function showClosedPage() {
+            var isEn = navigator.language.indexOf('en') === 0; // Guess initial lang for closed page
+            var title = isEn ? state.settings.titleEn : state.settings.titleZh;
+            var desc = isEn ? state.settings.descEn : state.settings.descZh;
+
+            if (title) document.getElementById('closed-title').textContent = title;
+            if (desc) document.getElementById('closed-desc').innerHTML = desc.replace(/\n/g, '<br>');
+
+            document.getElementById('closed-view').classList.remove('hidden');
+            trackView("非調查時間");
         }
 
         function loadBanner() {
