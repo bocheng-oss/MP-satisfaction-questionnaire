@@ -421,11 +421,17 @@
             historyStack: [],
             loading: true,
             language: 'zh',  // 'zh' or 'en'
-            settings: {}
+            settings: {},
+            uid: null // Tracking ID from URL
         };
 
         // --- Initialization ---
         window.onload = function () {
+            // Get UID from URL if exists
+            var urlParams = new URLSearchParams(window.location.search);
+            state.uid = urlParams.get('uid') || urlParams.get('id');
+            if (state.uid) console.log("Detected tracking ID:", state.uid);
+
             initUI();
             if (IS_LOCAL) {
                 console.warn("Running in LOCAL/MOCK mode.");
@@ -1047,6 +1053,7 @@
             var payload = JSON.parse(JSON.stringify(state.answers));
             payload["操作語言"] = state.language === 'en' ? 'English' : '繁體中文';
             payload["token"] = API_TOKEN; // 帶入暗號
+            if (state.uid) payload["uid"] = state.uid; // 帶入追蹤 ID
 
             if (!IS_LOCAL) {
                 // 使用 fetch POST 至 GAS
