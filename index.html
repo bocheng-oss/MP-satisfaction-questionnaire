@@ -505,25 +505,21 @@
         function isSurveyOpen() {
             if (!state.settings || (!state.settings.start && !state.settings.end)) return true;
 
-            // 取得今天的 YYYY/MM/DD 字串
-            var d = new Date();
-            var today = d.getFullYear() + '/' +
-                ("0" + (d.getMonth() + 1)).slice(-2) + '/' +
-                ("0" + d.getDate()).slice(-2);
+            var now = new Date().getTime();
 
-            console.log("--- 調查時間檢查 ---");
-            console.log("今天日期: ", today);
-            console.log("開放開始: ", state.settings.start);
-            console.log("開放結束: ", state.settings.end);
+            console.log("--- 調查時間檢查 (精確模式) ---");
+            if (state.settings.start) console.log("開放開始: ", new Date(state.settings.start).toLocaleString());
+            if (state.settings.end) console.log("開放結束: ", new Date(state.settings.end).toLocaleString());
+            console.log("現在時間: ", new Date().toLocaleString());
 
             if (state.settings.start) {
-                if (today < state.settings.start) {
+                if (now < state.settings.start) {
                     console.log("結果: 尚未開始");
                     return false;
                 }
             }
             if (state.settings.end) {
-                if (today > state.settings.end) {
+                if (now > state.settings.end) {
                     console.log("結果: 已經結束");
                     return false;
                 }
