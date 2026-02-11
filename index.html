@@ -59,7 +59,7 @@
                         }
                     },
                     borderRadius: {
-                        'card': '2.5rem',
+                        'card': '12px',
                     },
                     boxShadow: {
                         'soft': '0 20px 40px -10px rgba(0, 0, 0, 0.05)',
@@ -164,8 +164,8 @@
             cursor: pointer;
             transition: all 0.2s ease;
             box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-            margin-top: -8px;
-            /* (8/2) - (24/2) = -8px to center vertically in webkit */
+            margin-top: 0;
+            /* Reset to 0 to allow the browser's default centering or adjust to center */
         }
 
         .range-slider::-moz-range-thumb {
@@ -250,8 +250,9 @@
                 <!-- Language Selection View (NEW) -->
                 <div id="language-view"
                     class="hidden flex-1 flex flex-col items-center justify-center text-center fade-enter-active">
-                    <div class="mb-8">
-                        <i class="ph ph-translate text-6xl text-brand-red mb-4"></i>
+                    <div class="mb-4">
+                        <img src="Logo/180802_微程式資訊Logo_RGB-01.jpg" alt="Microprogram Logo"
+                            class="h-16 mx-auto object-contain">
                     </div>
                     <h1 class="text-3xl font-bold text-slate-800 mb-4">請選擇您的語言</h1>
                     <h2 class="text-2xl font-semibold text-slate-600 mb-12">Choose Your Language</h2>
@@ -259,13 +260,11 @@
                     <div class="flex flex-col gap-4 w-full max-w-md">
                         <button onclick="selectLanguage('zh')"
                             class="bg-white hover:bg-brand-red hover:text-white border-2 border-slate-200 hover:border-brand-red text-slate-700 px-10 py-6 rounded-xl font-bold text-lg tracking-wide shadow-lg hover:shadow-red-200 transition-all transform hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-3 group">
-                            <span class="text-2xl">🇹🇼</span>
                             <span>繁體中文</span>
                         </button>
 
                         <button onclick="selectLanguage('en')"
                             class="bg-white hover:bg-brand-red hover:text-white border-2 border-slate-200 hover:border-brand-red text-slate-700 px-10 py-6 rounded-xl font-bold text-lg tracking-wide shadow-lg hover:shadow-red-200 transition-all transform hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-3 group">
-                            <span class="text-2xl">🇺🇸</span>
                             <span>English</span>
                         </button>
                     </div>
@@ -617,6 +616,26 @@
             var progress = (index / totalGroups) * 100;
             progressBar.style.width = (progress > 10 ? progress : 10) + "%";
 
+            // --- Section Header (New Corporate Design) ---
+            if (group.title) {
+                var sectionHeader = document.createElement('div');
+                sectionHeader.className = "mb-10 border-l-8 border-brand-red pl-6 py-1";
+
+                var bigTitle = document.createElement('h2');
+                bigTitle.className = "text-2xl md:text-3xl font-bold text-slate-800 mb-2";
+                bigTitle.textContent = isEn ? group.titleEn : group.title;
+                sectionHeader.appendChild(bigTitle);
+
+                var groupDesc = isEn ? group.descriptionEn : group.description;
+                if (groupDesc) {
+                    var subText = document.createElement('p');
+                    subText.className = "text-slate-500 text-base md:text-lg leading-relaxed";
+                    subText.innerHTML = groupDesc.replace(/\n/g, '<br>');
+                    sectionHeader.appendChild(subText);
+                }
+                container.appendChild(sectionHeader);
+            }
+
             for (var i = 0; i < group.questions.length; i++) {
                 container.appendChild(createQuestionElement(group.questions[i]));
             }
@@ -760,8 +779,7 @@
                 }
                 inputEl = optionsContainer;
             } else if (q.type === 'slider' || q.type === '量表' || q.type === '評分') {
-                // Adjust label for Slider (NPS) - add red accent bar (Corporate Brand)
-                label.className = "block text-2xl font-bold text-slate-700 border-l-8 border-[#EF4444] pl-4 py-1 mb-6 mt-4";
+                // Removed custom styling to match other questions
 
                 var sliderWrapper = document.createElement('div');
                 sliderWrapper.className = "slider-container w-full py-4";
