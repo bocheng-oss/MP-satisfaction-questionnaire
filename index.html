@@ -247,18 +247,31 @@
                     <p class="mt-4 text-sm font-medium text-slate-400">載入系統中...</p>
                 </div>
 
-                <!-- Out of Survey Time View -->
+                <!-- Out of Survey Time View (Dual Language) -->
                 <div id="closed-view"
                     class="hidden flex-1 flex flex-col items-center justify-center text-center fade-enter-active p-4">
-                    <div class="mb-8">
-                        <i class="ph ph-calendar-x text-6xl text-slate-300"></i>
-                    </div>
                     <img id="closed-logo" src="Logo/180802_微程式資訊Logo_RGB-01.jpg" alt="Logo"
-                        class="h-12 mb-8 object-contain opacity-50">
-                    <h1 id="closed-title" class="text-2xl font-bold text-slate-800 mb-4">目前非調查時間</h1>
-                    <p id="closed-desc" class="text-slate-500 text-base leading-relaxed max-w-md mx-auto">
-                        感謝您的關注。本問卷調查尚未開始或已經結束，如有任何問題請連繫客服團隊。
-                    </p>
+                        class="h-12 mb-10 object-contain">
+                    <div class="mb-8">
+                        <i class="ph ph-calendar-x text-6xl text-brand-red opacity-20"></i>
+                    </div>
+
+                    <!-- Chinese Section -->
+                    <div class="mb-8">
+                        <h1 id="closed-title-zh" class="text-2xl font-bold text-slate-800 mb-3">目前非調查時間</h1>
+                        <p id="closed-desc-zh" class="text-slate-500 text-base leading-relaxed max-w-md mx-auto">
+                            感謝您的關注。本問卷調查尚未開始或已經結束，如有任何問題請連繫客服團隊。
+                        </p>
+                    </div>
+
+                    <!-- English Section -->
+                    <div class="border-t border-slate-100 pt-8 w-full max-w-xs">
+                        <h2 id="closed-title-en" class="text-xl font-bold text-slate-700 mb-3">Survey Currently
+                            Unavailable</h2>
+                        <p id="closed-desc-en" class="text-slate-400 text-sm leading-relaxed mx-auto">
+                            Thank you for your interest. This survey has not started yet or has already ended.
+                        </p>
+                    </div>
                 </div>
 
                 <!-- Language Selection View (NEW) -->
@@ -453,18 +466,25 @@
 
             try {
                 const response = JSON.parse(jsonString);
-                state.groups = response.groups || [];
-                state.settings = response.settings || {};
+
+                // 相容性處理：如果 response 是數組（舊版），則包裝成新版格式
+                if (Array.isArray(response)) {
+                    state.groups = response;
+                    state.settings = {};
+                } else {
+                    state.groups = response.groups || [];
+                    state.settings = response.settings || {};
+                }
+
                 state.loading = false;
 
-                // Check if survey is within allowed time
+                // 檢查調查時間
                 if (!isSurveyOpen()) {
                     showClosedPage();
                     return;
                 }
 
                 console.log("Parsed groups: " + state.groups.length);
-                // Show language selection first
                 document.getElementById('language-view').classList.remove('hidden');
                 trackView("選擇語言");
             } catch (e) {
@@ -489,12 +509,17 @@
         }
 
         function showClosedPage() {
-            var isEn = navigator.language.indexOf('en') === 0; // Guess initial lang for closed page
-            var title = isEn ? state.settings.titleEn : state.settings.titleZh;
-            var desc = isEn ? state.settings.descEn : state.settings.descZh;
+            // 確保隱藏進度條與其他視圖
+            document.getElementById('header-progress').classList.add('hidden');
+            document.getElementById('question-view').classList.add('hidden');
+            document.getElementById('language-view').classList.add('hidden');
+            document.getElementById('intro-view').classList.add('hidden');
 
-            if (title) document.getElementById('closed-title').textContent = title;
-            if (desc) document.getElementById('closed-desc').innerHTML = desc.replace(/\n/g, '<br>');
+            // 填入中英文內容
+            if (state.settings.titleZh) document.getElementById('closed-title-zh').textContent = state.settings.titleZh;
+            if (state.settings.descZh) document.getElementById('closed-desc-zh').innerHTML = state.settings.descZh.replace(/\n/g, '<br>');
+            if (state.settings.titleEn) document.getElementById('closed-title-en').textContent = state.settings.titleEn;
+            if (state.settings.descEn) document.getElementById('closed-desc-en').innerHTML = state.settings.descEn.replace(/\n/g, '<br>');
 
             document.getElementById('closed-view').classList.remove('hidden');
             trackView("非調查時間");
