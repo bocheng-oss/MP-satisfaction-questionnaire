@@ -398,7 +398,7 @@
            ========================================= */
         var IS_LOCAL = false;
         // ⚠️ 重要：部署到 GitHub Pages 後，請將此處替換為您的 GAS 部署網址 (exec URL)
-        var GAS_URL = 'https://script.google.com/macros/s/AKfycbx19gN6Z8tPinf3xwbZINbd62rjJ-30Hx87xBHa4d5O5AfNcnaCPQ3kvALWpfP-FQYM/exec';
+        var GAS_URL = 'https://script.google.com/macros/s/AKfycbxGcLuCSqdecTMKVerDeRTIxSWsRJekh3104wySzuDX2m3VV0QPdxzTnDowS4DtCu0e/exec';
         var API_TOKEN = 'Microprogram_Secure_2026_Key'; // 必須與 Code.gs 一致
 
         var MOCK_DATA = [
@@ -431,7 +431,10 @@
                 console.warn("Running in LOCAL/MOCK mode.");
                 setTimeout(function () { onDataLoaded(JSON.stringify(MOCK_DATA)); }, 800);
             } else {
-                fetch(GAS_URL + "?action=getQuestions&token=" + API_TOKEN)
+                // Add cache buster to prevent stale GAS responses
+                var cacheBuster = "&_cb=" + new Date().getTime();
+                console.log("Fetching questions with cache buster...");
+                fetch(GAS_URL + "?action=getQuestions&token=" + API_TOKEN + cacheBuster)
                     .then(response => response.json())
                     .then(data => onDataLoaded(JSON.stringify(data)))
                     .catch(err => onError("無法連線至後端: " + err));
@@ -466,25 +469,31 @@
 
             try {
                 const response = JSON.parse(jsonString);
+                console.log("GAS Data Structure Check:", response);
 
                 // 相容性處理：如果 response 是數組（舊版），則包裝成新版格式
                 if (Array.isArray(response)) {
                     state.groups = response;
                     state.settings = {};
+                    console.error("⛔ [CRITICAL] 伺服器回傳了舊版格式 (數組)，這表示您的 GAS 部署還沒更新為新版本。請建立『新版本』並重新部署。");
                 } else {
                     state.groups = response.groups || [];
                     state.settings = response.settings || {};
+                    console.log("✅ 成功讀取新版資料格式及設定。");
                 }
 
                 state.loading = false;
 
                 // 檢查調查時間
-                if (!isSurveyOpen()) {
+                var isOpen = isSurveyOpen();
+                console.log("Survey Open Status:", isOpen);
+
+                if (!isOpen) {
                     showClosedPage();
                     return;
                 }
 
-                console.log("Parsed groups: " + state.groups.length);
+                console.log("Parsed groups count: " + state.groups.length);
                 document.getElementById('language-view').classList.remove('hidden');
                 trackView("選擇語言");
             } catch (e) {
