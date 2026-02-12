@@ -430,7 +430,10 @@
             // Get UID from URL if exists
             var urlParams = new URLSearchParams(window.location.search);
             state.uid = urlParams.get('uid') || urlParams.get('id');
-            if (state.uid) console.log("Detected tracking ID:", state.uid);
+            if (state.uid) {
+                console.log("Detected tracking ID:", state.uid);
+                logOpening(state.uid);
+            }
 
             initUI();
             if (IS_LOCAL) {
@@ -450,6 +453,22 @@
         function initUI() {
             document.getElementById('next-btn').onclick = goNext;
             document.getElementById('prev-btn').onclick = goPrev;
+        }
+
+        // --- UID Tracking Logic ---
+        function logOpening(uid) {
+            if (IS_LOCAL) return;
+            // Send tracking signal to GAS
+            var trackingUrl = GAS_URL + "?action=logOpen&token=" + API_TOKEN + "&uid=" + encodeURIComponent(uid);
+            console.log("Logging open event for UID:", uid);
+            fetch(trackingUrl)
+                .then(response => response.json())
+                .then(result => {
+                    console.log("Tracking result:", result);
+                })
+                .catch(err => {
+                    console.error("Tracking log failed:", err);
+                });
         }
 
         // --- GA4 Virtual Page Tracking ---
