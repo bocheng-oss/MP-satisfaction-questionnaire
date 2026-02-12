@@ -430,10 +430,10 @@
             // Get UID from URL if exists
             var urlParams = new URLSearchParams(window.location.search);
             state.uid = urlParams.get('uid') || urlParams.get('id');
-            if (state.uid) {
-                console.log("Detected tracking ID:", state.uid);
-                logOpening(state.uid);
-            }
+            if (state.uid) console.log("Detected tracking ID:", state.uid);
+
+            // Always log the opening event
+            logOpening(state.uid);
 
             initUI();
             if (IS_LOCAL) {
