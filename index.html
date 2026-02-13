@@ -761,6 +761,9 @@
                 container.appendChild(createQuestionElement(group.questions[i]));
             }
 
+            // Initial visibility check
+            updateQuestionVisibility();
+
             document.getElementById('prev-btn').classList.toggle('hidden', state.historyStack.length === 0);
 
             var isLast = isLastGroup(index);
@@ -778,6 +781,40 @@
             // 優先使用 groupId，如果沒有則使用 index
             var groupLabel = group.id || ("g" + index);
             trackView(groupLabel + groupSuffix);
+        }
+
+        function updateQuestionVisibility() {
+            var currentGroup = state.groups[state.currentGroupIndex];
+            if (!currentGroup) return;
+
+            var changed = false;
+            currentGroup.questions.forEach(function (q) {
+                var el = document.getElementById("q-container-" + q.id);
+                if (!el) return;
+
+                if (q.displayLogic) {
+                    var parentAns = state.answers[q.displayLogic.parentId];
+                    var shouldShow = (parentAns === q.displayLogic.value);
+
+                    var isHidden = el.classList.contains('hidden');
+                    if (shouldShow && isHidden) {
+                        el.classList.remove('hidden');
+                        el.classList.add('fade-enter-active');
+                        changed = true;
+                    } else if (!shouldShow && !isHidden) {
+                        el.classList.add('hidden');
+                        el.classList.remove('fade-enter-active');
+                        delete state.answers[q.id]; // Clear answer if hidden
+                        changed = true;
+                    }
+                }
+            });
+
+            if (changed) {
+                validateCurrentGroup();
+                // If nested visibility exists, we might need a second pass, 
+                // but let's keep it simple for now.
+            }
         }
 
         function createQuestionElement(q) {
@@ -866,6 +903,7 @@
                             } else {
                                 state.answers[q.id] = opt; // Store the original ZH value
                             }
+                            updateQuestionVisibility();
                             validateCurrentGroup();
                         };
 
@@ -886,6 +924,7 @@
                             input.oninput = function () {
                                 if (btn.classList.contains('selected')) {
                                     state.answers[q.id] = this.value;
+                                    updateQuestionVisibility();
                                     validateCurrentGroup();
                                 }
                             };
@@ -938,6 +977,7 @@
                     state.answers[q.id] = this.value;
                     var p = (this.value * 10);
                     this.style.background = 'linear-gradient(to right, #EF4444 ' + p + '%, #e2e8f0 ' + p + '%)';
+                    updateQuestionVisibility();
                     validateCurrentGroup();
                 };
 
@@ -955,6 +995,7 @@
                 inputEl.value = state.answers[q.id] || '';
                 inputEl.oninput = function (e) {
                     state.answers[q.id] = e.target.value;
+                    updateQuestionVisibility();
                     validateCurrentGroup();
                 };
             } else {
@@ -965,11 +1006,13 @@
                 inputEl.value = state.answers[q.id] || '';
                 inputEl.oninput = function (e) {
                     state.answers[q.id] = e.target.value;
+                    updateQuestionVisibility();
                     validateCurrentGroup();
                 };
             }
 
             wrapper.appendChild(inputEl);
+            wrapper.id = "q-container-" + q.id;
             return wrapper;
         }
 
@@ -979,7 +1022,12 @@
             var isValid = true;
             for (var i = 0; i < questions.length; i++) {
                 var q = questions[i];
-                if (q.required) {
+
+                // Only validate if question is visible
+                var el = document.getElementById("q-container-" + q.id);
+                var isVisible = el ? !el.classList.contains('hidden') : true;
+
+                if (q.required && isVisible) {
                     var val = state.answers[q.id];
                     if (!val || val.toString().trim() === '') {
                         isValid = false;
@@ -1004,15 +1052,22 @@
             var currentGroup = state.groups[state.currentGroupIndex];
             var jumpTarget = null;
 
-            for (var i = 0; i < currentGroup.questions.length; i++) {
+            // We iterate BACKWARDS through questions so the "last" visible 
+            // answered question with logic wins (more specific questions override parent questions)
+            for (var i = currentGroup.questions.length - 1; i >= 0; i--) {
                 var q = currentGroup.questions[i];
-                if (q.logic) {
+
+                // Only consider logic from VISIBLE questions
+                var el = document.getElementById("q-container-" + q.id);
+                var isVisible = el ? !el.classList.contains('hidden') : true;
+
+                if (isVisible && q.logic) {
                     var ans = state.answers[q.id];
                     if (ans && q.logic[ans]) {
                         jumpTarget = q.logic[ans];
                         break;
-                    } else if (q.logic["Default"]) {
-                        if (!jumpTarget) jumpTarget = q.logic["Default"];
+                    } else if (q.logic["Default"] && !jumpTarget) {
+                        jumpTarget = q.logic["Default"];
                     }
                 }
             }
