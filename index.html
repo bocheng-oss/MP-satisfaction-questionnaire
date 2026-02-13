@@ -790,30 +790,48 @@
             var changed = false;
             currentGroup.questions.forEach(function (q) {
                 var el = document.getElementById("q-container-" + q.id);
-                if (!el) return;
+                if (!el || !q.displayLogic) return;
 
-                if (q.displayLogic) {
-                    var parentAns = state.answers[q.displayLogic.parentId];
-                    var shouldShow = (parentAns === q.displayLogic.value);
+                var parentId = q.displayLogic.parentId;
+                var logicVal = q.displayLogic.value;
+                var operator = q.displayLogic.operator || "==";
+                var parentAns = state.answers[parentId];
 
-                    var isHidden = el.classList.contains('hidden');
-                    if (shouldShow && isHidden) {
-                        el.classList.remove('hidden');
-                        el.classList.add('fade-enter-active');
-                        changed = true;
-                    } else if (!shouldShow && !isHidden) {
-                        el.classList.add('hidden');
-                        el.classList.remove('fade-enter-active');
-                        delete state.answers[q.id]; // Clear answer if hidden
-                        changed = true;
+                var shouldShow = true;
+
+                // 邏輯判斷
+                if (parentAns === undefined || parentAns === null || parentAns === "") {
+                    // 尚未作答時的預設狀態 (預設是隱藏，除非設定 defaultVisible: true)
+                    shouldShow = (q.displayLogic.defaultVisible === true);
+                } else {
+                    if (operator === "==" || operator === "equals") {
+                        shouldShow = (parentAns === logicVal);
+                    } else if (operator === "!=" || operator === "not") {
+                        shouldShow = (parentAns !== logicVal);
+                    } else if (operator === "contains") {
+                        if (Array.isArray(logicVal)) {
+                            shouldShow = logicVal.indexOf(parentAns) !== -1;
+                        } else {
+                            shouldShow = (parentAns === logicVal);
+                        }
                     }
+                }
+
+                var isHidden = el.classList.contains('hidden');
+                if (shouldShow && isHidden) {
+                    el.classList.remove('hidden');
+                    el.classList.add('fade-enter-active');
+                    changed = true;
+                } else if (!shouldShow && !isHidden) {
+                    el.classList.add('hidden');
+                    el.classList.remove('fade-enter-active');
+                    delete state.answers[q.id]; // 隱藏時清空答案
+                    changed = true;
                 }
             });
 
             if (changed) {
                 validateCurrentGroup();
-                // If nested visibility exists, we might need a second pass, 
-                // but let's keep it simple for now.
             }
         }
 
