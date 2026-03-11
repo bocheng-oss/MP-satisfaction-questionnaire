@@ -24,24 +24,32 @@
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="./favicon.ico">
     <link rel="shortcut icon" type="image/x-icon" href="./favicon.ico">
-
-
+    <meta name="description" content="親愛的貴賓您好，感謝您對微程式的支持，您的回饋是我們進步的最大動力。誠摯邀請您花費 3~5 分鐘為我們的服務提供寶貴建議。">
 
     <!-- Open Graph / Social Media Preview -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://bocheng-oss.github.io/MP-satisfaction-questionnaire/">
     <meta property="og:title" content="【微程式資訊】2026 客戶滿意度調查">
     <meta property="og:description" content="親愛的貴賓您好，感謝您對微程式的支持，您的回饋是我們進步的最大動力。誠摯邀請您花費 3~5 分鐘為我們的服務提供寶貴建議。">
-    <!-- ⚠️ 請更換為您實際的 OG 圖片網址，建議大小 1200x630 -->
     <meta property="og:image"
-        content="https://bocheng-oss.github.io/MP-satisfaction-questionnaire/Banner/banner_top.jpg">
+        content="https://bocheng-oss.github.io/MP-satisfaction-questionnaire/preview_image/cover_photo.png">
+    <meta property="og:image:type" content="image/png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:site_name" content="微程式資訊">
+
+    <!-- Schema.org for Google (Fix for Google Chat) -->
+    <meta itemprop="name" content="【微程式資訊】2026 客戶滿意度調查">
+    <meta itemprop="description" content="親愛的貴賓您好，感謝您對微程式的支持，您的回饋是我們進步的最大動力。誠摯邀請您花費 3~5 分鐘為我們的服務提供寶貴建議。">
+    <meta itemprop="image"
+        content="https://bocheng-oss.github.io/MP-satisfaction-questionnaire/preview_image/cover_photo.png">
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="【微程式資訊】2026 客戶滿意度調查">
     <meta name="twitter:description" content="您的回饋是我們進步的最大動力。誠摯邀請您填寫滿意度調查。">
     <meta name="twitter:image"
-        content="https://bocheng-oss.github.io/MP-satisfaction-questionnaire/Banner/banner_top.jpg">
+        content="https://bocheng-oss.github.io/MP-satisfaction-questionnaire/preview_image/cover_photo.png">
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts -->
@@ -355,7 +363,8 @@
                     <!-- Final Banner -->
                     <div
                         class="w-[calc(100%+4rem)] -mt-8 -mx-8 md:w-[calc(100%+6rem)] md:-mt-12 md:-mx-12 overflow-hidden rounded-t-card relative mb-12">
-                        <img src="./Banner/banner_top.jpg" alt="Thank You Banner" class="w-full h-auto object-cover">
+                        <img src="./preview_image/cover_photo.png" alt="Thank You Banner"
+                            class="w-full h-auto object-cover">
                     </div>
                     <div class="px-4 pb-8">
                         <h2 id="end-title" class="text-3xl font-bold text-slate-800 mb-4">您的回饋內容我們收到了！</h2>
@@ -370,7 +379,7 @@
                     class="hidden flex-1 flex flex-col justify-start text-center fade-enter-active">
                     <div
                         class="w-[calc(100%+4rem)] -mt-8 -mx-8 md:w-[calc(100%+6rem)] md:-mt-12 md:-mx-12 overflow-hidden rounded-t-card relative mb-12">
-                        <img src="./Banner/banner_top.jpg" alt="Banner" class="w-full h-auto object-cover">
+                        <img src="./preview_image/cover_photo.png" alt="Banner" class="w-full h-auto object-cover">
                     </div>
                     <div class="px-4">
                         <p id="terminate-text" class="text-slate-600 text-lg leading-relaxed mb-8">
@@ -580,7 +589,7 @@
             var loader = document.getElementById('banner-loader');
 
             // 直接讀取 GitHub 上的靜態資源
-            var bannerUrl = "./Banner/banner_top.jpg";
+            var bannerUrl = "./preview_image/cover_photo.png";
 
             if (img) {
                 img.onload = function () {
