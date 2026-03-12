@@ -152,6 +152,15 @@
             }
         }
 
+        /* 模擬系統載入進度條動畫 */
+        @keyframes progressSim {
+            0% { width: 5%; opacity: 0.5; }
+            30% { width: 45%; opacity: 1; }
+            60% { width: 85%; opacity: 1; }
+            95% { width: 98%; opacity: 1; }
+            100% { width: 98%; opacity: 0.5; }
+        }
+
         .question-card {
             transition: all 0.3s ease;
         }
@@ -279,7 +288,7 @@
                 class="bg-white rounded-card shadow-2xl p-8 md:p-12 min-h-[500px] flex flex-col relative overflow-hidden transition-all duration-500">
 
                 <!-- [PERF] Skeleton Screen: 取代旋轉圈圈，讓使用者感知內容正在載入 -->
-                <div id="loading-view" class="absolute inset-0 bg-white z-50 p-8 md:p-12">
+                <div id="loading-view" class="absolute inset-0 bg-white z-50 p-8 md:p-12 flex flex-col">
                     <!-- Skeleton: 模擬 Logo 位置 -->
                     <div class="flex justify-center mb-8 mt-4">
                         <div class="h-10 w-40 bg-slate-100 rounded-lg animate-pulse"></div>
@@ -287,16 +296,21 @@
                     <!-- Skeleton: 模擬標題 -->
                     <div class="h-6 w-3/4 bg-slate-100 rounded-md animate-pulse mx-auto mb-3"></div>
                     <div class="h-6 w-1/2 bg-slate-100 rounded-md animate-pulse mx-auto mb-8"></div>
-                    <!-- Skeleton: 模擬內文段落 -->
-                    <div class="space-y-3 mb-6">
-                        <div class="h-4 w-full bg-slate-100 rounded animate-pulse"></div>
-                        <div class="h-4 w-5/6 bg-slate-100 rounded animate-pulse"></div>
-                        <div class="h-4 w-full bg-slate-100 rounded animate-pulse"></div>
-                        <div class="h-4 w-4/6 bg-slate-100 rounded animate-pulse"></div>
-                    </div>
-                    <!-- Skeleton: 模擬按鈕 -->
-                    <div class="flex justify-center mt-10">
-                        <div class="h-12 w-36 bg-slate-100 rounded-xl animate-pulse"></div>
+                    
+                    <!-- 進度模擬區域 -->
+                    <div class="mt-auto mb-12 w-full max-w-sm mx-auto">
+                        <div class="flex justify-between mb-2 px-1">
+                            <span class="text-xs font-bold text-slate-400 animate-pulse">正在為您開啟問卷...</span>
+                            <span class="text-xs font-bold text-brand-red tracking-widest text-[10px]">LOADING</span>
+                        </div>
+                        <div class="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                            <!-- 進度條動畫 -->
+                            <div class="h-full bg-brand-red rounded-full shadow-[0_0_10px_rgba(239,68,68,0.3)]" 
+                                 style="animation: progressSim 4s infinite ease-in-out; width: 0%"></div>
+                        </div>
+                        <p class="text-center text-[11px] text-slate-300 mt-4 tracking-wider">
+                            確保連線穩定中
+                        </p>
                     </div>
                 </div>
 
