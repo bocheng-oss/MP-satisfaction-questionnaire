@@ -47,13 +47,19 @@
     <meta name="twitter:image"
         content="https://bocheng-oss.github.io/MP-satisfaction-questionnaire/preview_image/cover_photo.png">
 
+    <!-- [PERF] Preconnect: 提前建立 DNS+TCP+TLS，fetch 發出時連線已就緒 -->
+    <link rel="preconnect" href="https://script.google.com">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://www.googletagmanager.com">
+    <link rel="dns-prefetch" href="https://unpkg.com">
+
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-PZKGNDG5ZV"></script>
     <script>
         window.dataLayer = window.dataLayer || [];
         function gtag() { dataLayer.push(arguments); }
         gtag('js', new Date());
-
         gtag('config', 'G-PZKGNDG5ZV');
     </script>
     <script type="text/javascript">
@@ -71,8 +77,8 @@
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap"
         rel="stylesheet">
-    <!-- Phosphor Icons -->
-    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <!-- [PERF] Phosphor Icons: pin 版本避免 unpkg 重定向；defer 不阻塞 HTML 解析 -->
+    <script src="https://unpkg.com/@phosphor-icons/web@2.1.1/src/index.js" defer></script>
 
     <script>
         tailwind.config = {
@@ -272,10 +278,26 @@
             <div
                 class="bg-white rounded-card shadow-2xl p-8 md:p-12 min-h-[500px] flex flex-col relative overflow-hidden transition-all duration-500">
 
-                <!-- Loading State -->
-                <div id="loading-view" class="absolute inset-0 flex flex-col items-center justify-center bg-white z-50">
-                    <div class="w-12 h-12 border-4 border-slate-100 border-t-brand-red rounded-full animate-spin"></div>
-                    <p class="mt-4 text-sm font-medium text-slate-400">載入系統中...</p>
+                <!-- [PERF] Skeleton Screen: 取代旋轉圈圈，讓使用者感知內容正在載入 -->
+                <div id="loading-view" class="absolute inset-0 bg-white z-50 p-8 md:p-12">
+                    <!-- Skeleton: 模擬 Logo 位置 -->
+                    <div class="flex justify-center mb-8 mt-4">
+                        <div class="h-10 w-40 bg-slate-100 rounded-lg animate-pulse"></div>
+                    </div>
+                    <!-- Skeleton: 模擬標題 -->
+                    <div class="h-6 w-3/4 bg-slate-100 rounded-md animate-pulse mx-auto mb-3"></div>
+                    <div class="h-6 w-1/2 bg-slate-100 rounded-md animate-pulse mx-auto mb-8"></div>
+                    <!-- Skeleton: 模擬內文段落 -->
+                    <div class="space-y-3 mb-6">
+                        <div class="h-4 w-full bg-slate-100 rounded animate-pulse"></div>
+                        <div class="h-4 w-5/6 bg-slate-100 rounded animate-pulse"></div>
+                        <div class="h-4 w-full bg-slate-100 rounded animate-pulse"></div>
+                        <div class="h-4 w-4/6 bg-slate-100 rounded animate-pulse"></div>
+                    </div>
+                    <!-- Skeleton: 模擬按鈕 -->
+                    <div class="flex justify-center mt-10">
+                        <div class="h-12 w-36 bg-slate-100 rounded-xl animate-pulse"></div>
+                    </div>
                 </div>
 
                 <!-- Out of Survey Time View (Dual Language) -->
@@ -456,13 +478,14 @@
         };
 
         // --- Initialization ---
-        window.onload = function () {
+        // [PERF] DOMContentLoaded 比 window.onload 早觸發 200-500ms（不等圖片載完）
+        document.addEventListener('DOMContentLoaded', function () {
             // Get UID from URL if exists
             var urlParams = new URLSearchParams(window.location.search);
             state.uid = urlParams.get('uid') || urlParams.get('id');
             if (state.uid) console.log("Detected tracking ID:", state.uid);
 
-            // Always log the opening event
+            // [PERF] sendBeacon: fire-and-forget，不佔用 fetch 連線給 getQuestions
             logOpening(state.uid);
 
             initUI();
@@ -470,15 +493,15 @@
                 console.warn("Running in LOCAL/MOCK mode.");
                 setTimeout(function () { onDataLoaded(JSON.stringify(MOCK_DATA)); }, 800);
             } else {
-                // Add cache buster to prevent stale GAS responses
-                var cacheBuster = "&_cb=" + new Date().getTime();
-                console.log("Fetching questions with cache buster...");
+                // cache buster 用分鐘精度，避免每秒都是新 URL 繞過任何快取
+                var cacheBuster = "&_cb=" + Math.floor(new Date().getTime() / 60000);
+                console.log("Fetching questions...");
                 fetch(GAS_URL + "?action=getQuestions&token=" + API_TOKEN + cacheBuster)
                     .then(response => response.json())
                     .then(data => onDataLoaded(JSON.stringify(data)))
                     .catch(err => onError("無法連線至後端: " + err));
             }
-        };
+        });
 
         function initUI() {
             document.getElementById('next-btn').onclick = goNext;
@@ -488,17 +511,15 @@
         // --- UID Tracking Logic ---
         function logOpening(uid) {
             if (IS_LOCAL) return;
-            // Send tracking signal to GAS
-            var trackingUrl = GAS_URL + "?action=logOpen&token=" + API_TOKEN + "&uid=" + encodeURIComponent(uid);
-            console.log("Logging open event for UID:", uid);
-            fetch(trackingUrl)
-                .then(response => response.json())
-                .then(result => {
-                    console.log("Tracking result:", result);
-                })
-                .catch(err => {
-                    console.error("Tracking log failed:", err);
-                });
+            var trackingUrl = GAS_URL + "?action=logOpen&token=" + API_TOKEN + "&uid=" + encodeURIComponent(uid || '');
+            // [PERF] sendBeacon: 瀏覽器背景排程送出，不佔用 HTTP 連線，不影響 getQuestions
+            if (navigator.sendBeacon) {
+                navigator.sendBeacon(trackingUrl);
+                console.log("Tracking sent via sendBeacon for UID:", uid);
+            } else {
+                // Fallback for older browsers
+                fetch(trackingUrl).catch(function () {});
+            }
         }
 
         // --- GA4 Virtual Page Tracking ---
