@@ -526,16 +526,12 @@
         // --- UID Tracking Logic ---
         function logOpening(uid) {
             if (IS_LOCAL) return;
-            var cleanUid = uid ? encodeURIComponent(uid) : '';
-            var trackingUrl = GAS_URL + "?action=logOpen&token=" + API_TOKEN + "&uid=" + cleanUid;
-            // [PERF] sendBeacon: 瀏覽器背景排程送出，不佔用 HTTP 連線，不影響 getQuestions
-            if (navigator.sendBeacon) {
-                navigator.sendBeacon(trackingUrl);
-                console.log("Tracking sent via sendBeacon for UID:", uid);
-            } else {
-                // Fallback for older browsers
-                fetch(trackingUrl).catch(function () {});
-            }
+            var visitorId = uid || "Guest";
+            var trackingUrl = GAS_URL + "?action=logOpen&token=" + API_TOKEN + "&uid=" + encodeURIComponent(visitorId);
+            
+            // 背景發送 GET 請求，這對 GAS 的轉向機制最穩定，且不等待回應，不影響速度
+            fetch(trackingUrl).catch(function () { });
+            console.log("Tracking ID sent:", visitorId);
         }
 
         // --- GA4 Virtual Page Tracking ---
